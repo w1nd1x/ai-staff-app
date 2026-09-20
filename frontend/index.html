@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Staff — Экспертные ассистенты</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --surface-card: rgba(255, 255, 255, 0.85);
+            --surface-subtle: #f1f5f9;
+            --border-subtle: rgba(226, 232, 240, 0.8);
+            --border-hover: #cbd5e1;
+
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #1d4ed8 100%);
+            --primary-light: rgba(37, 99, 235, 0.06);
+            --primary-border: rgba(37, 99, 235, 0.25);
+
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --text-muted: #94a3b8;
+
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+
+            --shadow-glass: 0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+            --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.18);
+
+            --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            --font-mono: "SF Mono", "Fira Code", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #f8fafc;
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: var(--font-main);
+            padding: 32px 16px 60px 16px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 620px;
+        }
+
+        /* Шапка */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--primary-gradient);
+            color: #ffffff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            position: relative;
+        }
+
+        .brand-title {
+            font-size: 21px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* Статус плашка */
+        .status-badge {
+            background: var(--success-bg);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #047857;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            backdrop-filter: blur(8px);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        #specialistSelect { display: none; }
+
+        /* Карточки с Glassmorphism */
+        .card {
+            background: var(--surface-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-glass);
+            transition: all 0.2s ease;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Поиск и категории */
+        .search-box {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 14px 10px 36px !important;
+            font-size: 13px !important;
+            border-radius: 12px !important;
+            background: rgba(241, 245, 249, 0.8) !important;
+            border: 1px solid transparent !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .search-input:focus {
+            background: #ffffff !important;
+            border-color: var(--primary-border) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Сетка специалистов */
+        .specialist-grid-container {
+            max-height: 230px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-bottom: 14px;
+        }
+
+        .specialist-grid-container::-webkit-scrollbar { width: 4px; }
+        .specialist-grid-container::-webkit-scrollbar-track { background: transparent; }
+        .specialist-grid-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .specialist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+        }
+
+        .spec-card {
+            background: #ffffff;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            user-select: none;
+        }
+
+        .spec-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+        }
+
+        .spec-card.active {
+            background: #ffffff;
+            border-color: var(--primary);
+            transform: scale(1.02);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .spec-card-icon-wrapper {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--surface-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .spec-card.active .spec-card-icon-wrapper {
+            background: var(--primary-light);
+        }
+
+        .spec-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.25;
+        }
+
+        .spec-card-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: #ffffff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+        }
+
+        .spec-card.active .spec-card-check { display: flex; }
+
+        .no-results {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 24px 0;
+            grid-column: 1 / -1;
+        }
+
+        /* Описание роли */
+        #specialistDescription {
+            font-size: 13px;
+            color: var(--text-sub);
+            line-height: 1.55;
+            background: rgba(241, 245, 249, 0.6);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        /* Поля ввода */
+        .form-group {
+            margin-bottom: 18px;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .form-group:last-child { margin-bottom: 0; }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            letter-spacing: -0.1px;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            background: #ffffff;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        input[type="text"]:hover, select:hover, textarea:hover {
+            border-color: var(--border-hover);
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        /* Премиальная кнопка с эффектом блика */
+        .btn-primary {
+            width: 100%;
+            padding: 15px 24px;
+            background: var(--primary-gradient);
+            background-size: 200% auto;
+            border: none;
+            color: #ffffff;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 18px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            background-position: right center;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Индикатор загрузки */
+        .loader-block {
+            padding: 18px 0 6px 0;
+            text-align: center;
+        }
+
+        .loader-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--surface-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .loader-bar::after {
+            content: "";
+            position: absolute;
+            left: -40%;
+            width: 40%;
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 4px;
+            animation: loadingSlide 1.2s infinite ease-in-out;
+        }
+
+        .loader-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        /* Блок результата */
+        .result-card {
+            background: #ffffff;
+            border: 1px solid var(--primary-border);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: 0 20px 30px -10px rgba(37, 99, 235, 0.12);
+            margin-top: 22px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .result-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.2px;
+        }
+
+        .action-buttons { display: flex; gap: 8px; }
+
+        .action-btn {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-sub);
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .result-body {
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .result-body p { margin-bottom: 12px; }
+        .result-body h1, .result-body h2, .result-body h3 { margin: 18px 0 10px 0; color: var(--text-main); letter-spacing: -0.3px; }
+        .result-body ul, .result-body ol { margin-left: 20px; margin-bottom: 12px; }
+        .result-body code { font-family: var(--font-mono); background: var(--surface-subtle); padding: 3px 6px; border-radius: 6px; font-size: 13px; color: #1e293b; }
+
+        @keyframes loadingSlide {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="app-header">
+        <div class="brand-logo">
+            <div class="brand-icon">⚡</div>
+            <div>
+                <div class="brand-title">AI Staff</div>
+                <div class="brand-subtitle">Экспертная экосистема</div>
+            </div>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>Network Active</span>
+        </div>
+    </header>
+
+    <!-- Секция выбора специалиста -->
+    <div class="card">
+        <div class="section-label">
+            <span>Выберите роль</span>
+            <span id="specCount" style="font-weight: 600; text-transform: none;"></span>
+        </div>
+
+        <div class="search-box">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Быстрый поиск специалиста..." oninput="filterSpecialists()">
+        </div>
+
+        <select id="specialistSelect" onchange="renderFields()"></select>
+
+        <div class="specialist-grid-container">
+            <div class="specialist-grid" id="specialistCardsGrid"></div>
+        </div>
+
+        <div id="specialistDescription"></div>
+    </div>
+
+    <!-- Форма параметров -->
+    <div class="card">
+        <div class="section-label">
+            <span>Параметры задачи</span>
+        </div>
+        <div id="dynamicFieldsContainer"></div>
+
+        <button class="btn-primary" id="generateBtn" onclick="sendDataToAI()">
+            <span>Сформировать решение</span>
+        </button>
+
+        <div class="loader-block" id="loader" style="display: none;">
+            <div class="loader-bar"></div>
+            <div class="loader-text">Ассистент анализирует и формирует ответ...</div>
+        </div>
+    </div>
+
+    <!-- Результат -->
+    <div class="result-card" id="resultBox" style="display: none;">
+        <div class="result-header">
+            <span class="result-title">Готовый результат</span>
+            <div class="action-buttons">
+                <button class="action-btn" id="copyBtn" onclick="copyToClipboard()">Скопировать</button>
+                <button class="action-btn" onclick="shareResult()">Поделиться</button>
+            </div>
+        </div>
+        <div class="result-body" id="resultText"></div>
+    </div>
+</div>
+
+<script>
+    let specialistsData = {};
+    let abortController = null;
+    let selectedKey = null;
+
+    async function loadSpecialists() {
+        try {
+            const response = await fetch('/specialists');
+            specialistsData = await response.json();
+
+            const select = document.getElementById('specialistSelect');
+            select.innerHTML = '';
+
+            const keys = Object.keys(specialistsData);
+            if (keys.length > 0) {
+                selectedKey = keys[0];
+            }
+
+            keys.forEach(key => {
+                const spec = specialistsData[key];
+                const option = document.createElement('option');
+                option.value = key;
+                option.innerText = `${spec.icon} ${spec.title}`;
+                select.appendChild(option);
+            });
+
+            renderGrid();
+            renderFields();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка: Не удалось подключиться к бэкенду.");
+        }
+    }
+
+    function renderGrid(filterText = '') {
+        const grid = document.getElementById('specialistCardsGrid');
+        grid.innerHTML = '';
+
+        let visibleCount = 0;
+        const query = filterText.toLowerCase().trim();
+
+        for (const key in specialistsData) {
+            const spec = specialistsData[key];
+            const titleMatch = spec.title.toLowerCase().includes(query);
+            const descMatch = (spec.description || '').toLowerCase().includes(query);
+
+            if (query && !titleMatch && !descMatch) continue;
+
+            visibleCount++;
+            const card = document.createElement('div');
+            card.className = `spec-card ${key === selectedKey ? 'active' : ''}`;
+            card.dataset.key = key;
+            card.onclick = () => selectSpecialistCard(key);
+
+            card.innerHTML = `
+                <div class="spec-card-icon-wrapper">${spec.icon || '💼'}</div>
+                <div class="spec-card-title">${spec.title}</div>
+                <div class="spec-card-check">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+
+        document.getElementById('specCount').innerText = `${visibleCount} из ${Object.keys(specialistsData).length}`;
+
+        if (visibleCount === 0) {
+            grid.innerHTML = `<div class="no-results">Ничего не найдено по запросу "${filterText}"</div>`;
+        }
+    }
+
+    function filterSpecialists() {
+        const query = document.getElementById('searchInput').value;
+        renderGrid(query);
+    }
+
+    function selectSpecialistCard(key) {
+        selectedKey = key;
+        document.getElementById('specialistSelect').value = key;
+
+        document.querySelectorAll('.spec-card').forEach(card => {
+            card.classList.toggle('active', card.dataset.key === key);
+        });
+
+        renderFields();
+    }
+
+    function renderFields() {
+        const container = document.getElementById('dynamicFieldsContainer');
+        const descContainer = document.getElementById('specialistDescription');
+
+        container.innerHTML = '';
+
+        if (!selectedKey || !specialistsData[selectedKey]) return;
+
+        descContainer.innerText = specialistsData[selectedKey].description;
+
+        const fields = specialistsData[selectedKey].fields;
+
+        fields.forEach(field => {
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.innerText = field.label;
+            formGroup.appendChild(label);
+
+            let inputElement;
+
+            if (field.type === 'select') {
+                inputElement = document.createElement('select');
+                field.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.innerText = opt;
+                    inputElement.appendChild(option);
+                });
+            } else if (field.type === 'textarea') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 4;
+            } else {
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+            }
+
+            inputElement.id = field.id;
+            inputElement.placeholder = field.placeholder;
+            inputElement.className = 'ai-input';
+
+            formGroup.appendChild(inputElement);
+            container.appendChild(formGroup);
+        });
+    }
+
+    function getTelegramUser(){
+        if (window.Telegram?.WebApp?.initData){
+            return window.Telegram?.WebApp?.initData;
+        }
+
+        if (location.hostname == 'localhost' || location.hostname === '127.0.0.1'){
+            return 'user=%7B%22id%22%3A999999%2C%22first_name%22%3A%22DevUser%22%7D&auth_date=1620000000&hash=dev_hash';
+        }
+        return '';
+    }
+
+    async function apiFetch(url, options = {}){
+        const initData = getTelegramUser();
+        const defaultHeaders = {
+            'Content-Type': "application/json",
+            'Authorization': `Bearer ${initData}`,
+        };
+
+        const config = {
+            ...options,
+            headers: {
+                ...defaultHeaders,
+                ...(options.headers || {})
+            }
+        };
+
+        return fetch(url, config);
+    }
+
+    async function sendDataToAI() {
+        abortController = new AbortController();
+
+        const inputElements = document.querySelectorAll('.ai-input');
+        const inputsData = {};
+        let allFilled = true;
+
+        inputElements.forEach(input => {
+            if (!input.value.trim()) allFilled = false;
+            inputsData[input.id] = input.value;
+        });
+
+        if (!allFilled) {
+            alert("Пожалуйста, заполните все поля формы.");
+            return;
+        }
+
+        const requestData = {
+            specialist_id: selectedKey,
+            inputs: inputsData
+        };
+
+        document.getElementById('generateBtn').disabled = true;
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('resultBox').style.display = 'block';
+        document.getElementById('resultText').innerText = '';
+        let fullText = '';
+
+        try {
+            const response = await apiFetch('/generate', {
+                method: 'POST',
+                body: JSON.stringify(requestData),
+                signal: abortController.signal
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Произошла ошибка при обработке запроса');
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            while (true) {
+                const {value, done} = await reader.read();
+                if (done) break;
+                const chunkText = decoder.decode(value);
+                fullText += chunkText;
+                document.getElementById('resultText').innerHTML = marked.parse(fullText);
+            }
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                document.getElementById('resultText').innerText += '\n\n[Процесс остановлен]';
+            } else {
+                console.error('Ошибка:', error);
+                alert(error.message);
+            }
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('generateBtn').disabled = false;
+        }
+    }
+
+    window.onload = loadSpecialists;
+
+    async function shareResult(){
+        const textShare = document.getElementById('resultText').innerText;
+        if (!textShare) return;
+
+        try {
+            await navigator.share({
+                title: 'Результат работы AI Staff',
+                text: textShare,
+            });
+        } catch (err) {
+            console.log('Отправка отменена', err);
+        }
+    }
+
+    async function copyToClipboard() {
+        const resultText = document.getElementById('resultText').innerText;
+        const copyBtn = document.getElementById('copyBtn');
+
+        if (!resultText) return;
+
+        try {
+            await navigator.clipboard.writeText(resultText);
+
+            copyBtn.innerText = 'Скопировано';
+            copyBtn.style.backgroundColor = '#ecfdf5';
+            copyBtn.style.color = '#047857';
+
+            setTimeout(() => {
+                copyBtn.innerText = 'Скопировать';
+                copyBtn.style.backgroundColor = '';
+                copyBtn.style.color = '';
+            }, 2000);
+
+        } catch (err) {
+            alert('Скопируйте текст вручную.');
+        }
+    }
+</script>
+</body>
+</html>
