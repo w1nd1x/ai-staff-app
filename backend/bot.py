@@ -44,6 +44,13 @@ async def cmd_start(message: types.Message):
 
         # Ссылка-заглушка для Web App
         web_app_url = "https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com"
+        welcome_text = (
+            f"Здравствуйте, **{username}**! 👋\n\n"
+            "Вы подключены к рабочей среде **NeuroStaff**.\n"
+            "Делегируйте задачи виртуальным специалистам и оптимизируйте "
+            "рабочие процессы прямо из Telegram.\n\n"
+            "Для старта нажмите кнопку ниже 👇"
+        )
 
         # Создаем кнопку Mini App
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -56,9 +63,7 @@ async def cmd_start(message: types.Message):
         ])
 
         await message.answer(
-            f"Привет, {message.from_user.first_name}! 👋\n\n"
-            f"Добро пожаловать в твой личный **ИИ-Штат сотрудников**.\n\n"
-            f"Нажми на кнопку ниже, чтобы запустить приложение👇",
+            text=welcome_text,
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
@@ -80,6 +85,7 @@ async def check_sub_handlers(call: types.CallbackQuery):
     if await is_subscribed(bot, user_id):
         await call.message.delete()
         add_user(tg_id=user_id, username=user_name)
+
         kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Открыть ИИ-Штат 🚀", web_app=WebAppInfo(url='https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com'))]
         ])
@@ -91,7 +97,6 @@ async def check_sub_handlers(call: types.CallbackQuery):
     else:
         # Покажем системное всплывающее окно
         await call.answer("❌ Подписка не найдена! Сначала подпишитесь.", show_alert=True)
-
 
 
 # Главная функция запуска
