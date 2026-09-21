@@ -76,9 +76,10 @@ async def cmd_start(message: types.Message):
 @dp.callback_query(F.data == 'check_sub')
 async def check_sub_handlers(call: types.CallbackQuery):
     user_id = call.from_user.id
+    user_name = call.from_user.username or 'без_ника'
     if await is_subscribed(bot, user_id):
         await call.message.delete()
-
+        add_user(tg_id=user_id, username=user_name)
         kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Открыть ИИ-Штат 🚀", web_app=WebAppInfo(url='https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com'))]
         ])
