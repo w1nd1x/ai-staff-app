@@ -3,8 +3,15 @@ from openai import OpenAI
 from backend.config.specialists import AI_STAFF
 from dotenv import load_dotenv
 from backend.database.models import decrease_limit
-
+from pydantic import BaseModel
 load_dotenv()
+
+
+class ReplayRequest(BaseModel):
+    specialist_id: str
+    original_text: str
+    user_feedback: str
+
 client = OpenAI(base_url="https://api.deepseek.com",
                 api_key=os.getenv("DEEP_SEEK",)
                 )
