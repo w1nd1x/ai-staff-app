@@ -2,7 +2,7 @@ import asyncio
 from fastapi import FastAPI, Header, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from backend.ai import generate_ai_content
+from backend.ai import generate_ai_content, refine_ai_content
 from fastapi.responses import FileResponse
 from backend.config.specialists import AI_STAFF
 from fastapi.responses import StreamingResponse
@@ -59,6 +59,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Для рефакторинга ответа
+class ReplayRequest(BaseModel):
+    specialist_id: str
+    original_text: str
+    user_feedback: str
 
 # 3. Наш трафарет для проверки данных от пользователя
 class GenerationRequest(BaseModel):
@@ -110,4 +115,26 @@ async def generate_text(
             status_code=500,
             detail=f"Ошибка генерации текста: {str(e)}"
             )
+
+#Окошка для переделки исходного ответа от Нейросети
+@app.post("/refine")
+async def refine(
+        data: ReplayRequest,
+        user: TelegramUser = Depends(check_user_limits)
+):
+    try:
+        ai_response = refine_ai_content(
+            specialist_id=data.specialist_id,
+            original_text=data.original_text,
+            user_feedback=data.user_feedback,
+            user_id=user.id
+        )
+        return StreamingResponse(ai_response, media_type="text/plain")
+
+    except Exception as e:
+        raise HTTPException(status_code=500,
+            detail=f"Ошибка доработки текста: {str(e)}"
+        )
+
+
 

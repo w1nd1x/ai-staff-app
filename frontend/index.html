@@ -468,6 +468,44 @@
         .result-body ul, .result-body ol { margin-left: 20px; margin-bottom: 12px; }
         .result-body code { font-family: var(--font-mono); background: var(--surface-subtle); padding: 3px 6px; border-radius: 6px; font-size: 13px; color: #1e293b; }
 
+        /* Блок доработки ответа */
+        .refine-section {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .refine-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .refine-btn {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            border: none;
+            padding: 0 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .refine-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .refine-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         @keyframes loadingSlide {
             0% { left: -40%; }
             100% { left: 100%; }
@@ -547,6 +585,15 @@
             </div>
         </div>
         <div class="result-body" id="resultText"></div>
+
+        <!-- Поле и кнопка для доработки текста -->
+        <div class="refine-section">
+            <label for="refineInput">Внести правки или доработать:</label>
+            <div class="refine-input-group">
+                <input type="text" id="refineInput" placeholder="Например: сделай короче, добавь эмодзи..." />
+                <button class="refine-btn" id="refineBtn" onclick="sendRefinement()">🪄 Поправить</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -775,6 +822,66 @@
         } finally {
             document.getElementById('loader').style.display = 'none';
             document.getElementById('generateBtn').disabled = false;
+        }
+    }
+
+    // Новая функция для отправки правок и доработки текста
+    async function sendRefinement() {
+        const feedbackInput = document.getElementById('refineInput');
+        const userFeedback = feedbackInput.value.trim();
+        const resultTextElement = document.getElementById('resultText');
+        const originalText = resultTextElement.innerText;
+
+        if (!userFeedback) {
+            alert("Напишите, что именно нужно изменить в тексте!");
+            return;
+        }
+        if (!originalText) {
+            alert("Сначала сгенерируйте первоначальный текст!");
+            return;
+        }
+
+        const refineBtn = document.getElementById('refineBtn');
+        refineBtn.disabled = true;
+        refineBtn.innerText = "⏳ Правим...";
+
+        try {
+            const response = await apiFetch('/refine', {
+                method: 'POST',
+                body: JSON.stringify({
+                    specialist_id: selectedKey,
+                    original_text: originalText,
+                    user_feedback: userFeedback
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Ошибка при обновлении текста');
+            }
+
+            feedbackInput.value = '';
+            resultTextElement.innerText = '';
+            let fullText = '';
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunkText = decoder.decode(value);
+                fullText += chunkText;
+                resultTextElement.innerHTML = marked.parse(fullText);
+            }
+
+        } catch (error) {
+            console.error("Ошибка при правке:", error);
+            alert("Произошла ошибка при доработке текста: " + error.message);
+        } finally {
+            refineBtn.disabled = false;
+            refineBtn.innerText = "🪄 Поправить";
         }
     }
 
