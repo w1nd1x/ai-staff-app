@@ -3,7 +3,7 @@ from openai import OpenAI
 from backend.config.specialists import AI_STAFF
 from dotenv import load_dotenv
 from backend.database.models import decrease_limit
-from pydantic import BaseModel
+
 load_dotenv()
 
 
@@ -71,7 +71,7 @@ async def refine_ai_content(specialist_id: str, original_text: str, user_feedbac
                 yield chunk.choices[0].delta.content
 
         # 6. Списываем лимит пользователя после успешной генерации
-        decrease_limit(user_id)
+        await decrease_limit(user_id)
 
     except Exception as e:
         print(f"❌ Ошибка в refine_ai_content: {e}")

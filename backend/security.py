@@ -33,8 +33,8 @@ async def get_current_user(authorization: str | None = Header(None)):
         dev_username = 'test_dev'
 
         db_user = get_user(dev_id)
-        if not db_user:
-            add_user(tg_id=dev_id, username=dev_username)
+        if not await db_user:
+            await add_user(tg_id=dev_id, username=dev_username)
 
         return TelegramUser(
             id=dev_id,
@@ -106,8 +106,8 @@ async def get_current_user(authorization: str | None = Header(None)):
 
     # 9. Проверяем / создаем пользователя в БД и подтягиваем статус подписки
     db_user = get_user(tg_id)
-    if not db_user:
-        add_user(tg_id=tg_id, username=username)
+    if not await db_user:
+        await add_user(tg_id=tg_id, username=username)
         db_user = get_user(tg_id)
 
     return TelegramUser(

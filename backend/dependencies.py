@@ -6,7 +6,7 @@ from backend.database.models import check_limits
 
 async def check_user_limits(user: TelegramUser = Depends(get_current_user)):
 
-    has_limit = check_limits(user.id)
+    has_limit = await check_limits(user.id)
 
     if not has_limit:
         raise HTTPException(

@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from backend.ai import generate_ai_content, refine_ai_content
@@ -20,7 +20,7 @@ from backend.database.models import init_db, reset_all_users_limits
 async def schedule_limits_reset():
     while True:
         await asyncio.sleep(7200)
-        reset_all_users_limits(default_limit=5)
+        await reset_all_users_limits(default_limit=5)
 
 # 1. Объявляем асинхронный контекстный менеджер
 @asynccontextmanager
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     # --- БЛОК 1: СТАРТ СЕРВЕРА ---
     # Все, что написано ДО ключевого слова yield,
     # выполняется в момент запуска Uvicorn.
-    init_db()
+    await init_db()
     print("✅ База данных подключена и таблицы созданы!")
 
     # Запускаем фоновую задачу сброса лимитов

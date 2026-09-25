@@ -107,4 +107,4 @@ async def reset_all_users_limits(default_limit: int = 5):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute('UPDATE users SET limits = ?', (default_limit,))
         await db.commit()
-    print('Бизнес-логика: Лимиты всех пользователей успешно обновлены')
+    print('Бизнес-логика: ЛимитыЛимиты всех пользователей успешно обновлены')

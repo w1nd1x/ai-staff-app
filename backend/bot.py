@@ -40,7 +40,7 @@ async def cmd_start(message: types.Message):
     if await is_subscribed(bot, user_id):
 
         # Записываем юзера в БД
-        add_user(tg_id=user_id, username=username)
+        await add_user(tg_id=user_id, username=username)
 
         # Ссылка-заглушка для Web App
         web_app_url = "https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com"
@@ -84,7 +84,7 @@ async def check_sub_handlers(call: types.CallbackQuery):
     user_name = call.from_user.username or 'без_ника'
     if await is_subscribed(bot, user_id):
         await call.message.delete()
-        add_user(tg_id=user_id, username=user_name)
+        await add_user(tg_id=user_id, username=user_name)
 
         kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Открыть ИИ-Штат 🚀", web_app=WebAppInfo(url='https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com'))]
@@ -101,7 +101,7 @@ async def check_sub_handlers(call: types.CallbackQuery):
 
 # Главная функция запуска
 async def main():
-    init_db()
+    await init_db()
     await bot.delete_webhook(drop_pending_updates=True)  # <-- Очистит зависшую очередь
     print("Бизнес-логика: Бот успешно запущен и вышел на связь!")
     await dp.start_polling(bot)
