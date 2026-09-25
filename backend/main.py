@@ -6,7 +6,7 @@ from backend.ai import generate_ai_content, refine_ai_content
 from fastapi.responses import FileResponse
 from backend.config.specialists import AI_STAFF
 from fastapi.responses import StreamingResponse
-from backend.dependencies import check_user_limits
+from backend.dependencies import check_user_limits, verify_admin_key
 
 from backend.security import TelegramUser
 
@@ -136,5 +136,9 @@ async def refine(
             detail=f"Ошибка доработки текста: {str(e)}"
         )
 
-
+@app.get("/api/admin/test")
+async def test_admin(
+        is_admin: bool = Depends(verify_admin_key)
+):
+    return {"status": "ok", "message": "Доступ разрешен!"}
 
