@@ -27,34 +27,34 @@ async def schedule_limits_reset():
         await asyncio.sleep(7200)
         await reset_all_users_limits(default_limit=5)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Запускаем polling бота в фоновой задаче при старте FastAPI
-    asyncio.create_task(dp.start_polling(bot))
-    yield
+async def start_bot():
+    try:
+        print("🤖 Запускаем Telegram-бота...")
+        # Удаляем предыдущие вебхуки, если они были
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+    except Exception as e:
+        print(f"❌ Ошибка при работе бота: {e}")
 
-# 1. Объявляем асинхронный контекстный менеджер
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- БЛОК 1: СТАРТ СЕРВЕРА ---
-    # Все, что написано ДО ключевого слова yield,
-    # выполняется в момент запуска Uvicorn.
+    # --- СТАРТ ---
     await init_db()
     print("✅ База данных подключена и таблицы созданы!")
 
-    # Запускаем фоновую задачу сброса лимитов
-    task = asyncio.create_task(schedule_limits_reset())
+    # Запускаем бота как фоновую задачу Event Loop
+    bot_task = asyncio.create_task(start_bot())
 
-    yield  # 👈 ТОЧКА ПЕРЕДАЧИ УПРАВЛЕНИЯ
+    yield
 
-    # --- БЛОК 2: ОСТАНОВКА СЕРВЕРА ---
-    # Все, что написано ПОСЛЕ yield,
-    # выполняется, когда ты нажимаешь Ctrl+C и выключаешь сервер.
-    print("🛑 Сервер останавливается, закрываем ресурсы...")
+    # --- ОСТАНОВКА ---
+    print("🛑 Останавливаем бота и закрываем сессии...")
+    bot_task.cancel()
+    await bot.session.close()
 
 
-# 2. Передаем наш lifespan в экземпляр FastAPI
-app = FastAPI(lifespan=lifespan, title='AI Staff API')
+app = FastAPI(lifespan=lifespan, title="AI Staff API")
 
 
 # 1. Создаем сервер
