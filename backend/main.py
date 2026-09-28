@@ -2,17 +2,17 @@ import asyncio
 from fastapi import HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.responses import HTMLResponse
+
 from backend.ai import generate_ai_content, refine_ai_content
 from fastapi.responses import FileResponse
 from backend.config.specialists import AI_STAFF
 from fastapi.responses import StreamingResponse
 from backend.dependencies import check_user_limits, verify_admin_key
-
 from backend.security import TelegramUser
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from backend.database.models import init_db, reset_all_users_limits
+from backend.database.models import init_db, reset_all_users_limits, get_all_users, increase_limit
 
 
 #Обновляем лимиты пользователей
@@ -69,6 +69,10 @@ class ReplayRequest(BaseModel):
 class GenerationRequest(BaseModel):
     specialist_id: str
     inputs: dict
+
+class AddLimitsRequest(BaseModel):
+    tg_id: int
+    limits: int
 
 
 # 4. Главная страница (проверка, что сервер жив)
@@ -136,9 +140,24 @@ async def refine(
             detail=f"Ошибка доработки текста: {str(e)}"
         )
 
-@app.get("/api/admin/test")
-async def test_admin(
+
+@app.get("/admin", response_class=FileResponse)
+async def get_admin_user():
+    return FileResponse('frontend/admin.html')
+
+@app.get("/api/admin/users")
+async def get_admin_users(
         is_admin: bool = Depends(verify_admin_key)
 ):
-    return {"status": "ok", "message": "Доступ разрешен!"}
+    # return {"status": "ok", "message": "Доступ разрешен!"}
+    users = await get_all_users()
+    return {'users': users}
 
+@app.post("/api/admin/add-limits")
+async def add_limits_endpoint(
+        data: AddLimitsRequest,
+        is_admin: bool = Depends(verify_admin_key)):
+
+        await increase_limit(data.tg_id, data.limits)
+        users = await get_all_users()
+        return {"status": "ok", "users": users}

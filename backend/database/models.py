@@ -1,4 +1,5 @@
 import aiosqlite
+from aiosqlite import cursor
 
 # Путь к файлу базы данных
 DB_PATH = "database.db"
@@ -108,3 +109,13 @@ async def reset_all_users_limits(default_limit: int = 5):
         await db.execute('UPDATE users SET limits = ?', (default_limit,))
         await db.commit()
     print('Бизнес-логика: ЛимитыЛимиты всех пользователей успешно обновлены')
+
+#Функция возвращает всех пользователей
+async def get_all_users() -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("select tg_id, username, is_premium, has_autopilot, limits FROM users") as cursor:
+            rows = await cursor.fetchall()
+            user_list = [dict(row) for row in rows]
+            return user_list
+

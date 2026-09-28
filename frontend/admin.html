@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Админка AI Staff</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h2 {
+            color: #1a1a1a;
+            font-size: 22px;
+        }
+
+        p {
+            margin-bottom: 18px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #409eff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #409eff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #66b1ff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ebeef5;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #606266;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #f5f7fa;
+        }
+
+        #errorMsg, #modalError {
+            color: #f56c6c;
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="LoginPanel" class="card">
+        <h2>Вход в Админ-Панель</h2>
+        <p>Введите секретный ключ администратора</p>
+        <input type="password" id="AdminKeyInput" placeholder="Введите ключ...">
+        <button onclick="login()">Войти</button>
+        <p id="errorMsg"></p>
+    </div>
+
+    <div id="DashbordBlock" class="card hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>Список пользователей</h2>
+            <button onclick="openModal()" style="width: auto; padding: 8px 16px;">+ Начислить лимиты</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Telegram ID</th>
+                    <th>Username</th>
+                    <th>Лимиты</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно -->
+    <div id="limitsModal" class="card hidden" style="position: fixed; top: 20%; left: 50%; transform: translateX(-50%); z-index: 100; border: 2px solid #409eff; max-width: 400px;">
+        <h3 style="margin-bottom: 15px;">Начисление лимитов</h3>
+        <input type="number" id="modalTgId" placeholder="Telegram ID пользователя">
+        <input type="number" id="modalLimits" placeholder="Количество лимитов (напр. 10)">
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="submitAddLimits()">Применить</button>
+            <button onclick="closeModal()" style="background-color: #909399;">Отмена</button>
+        </div>
+        <p id="modalError"></p>
+    </div>
+
+<script>
+    let adminKey = "";
+
+    async function login() {
+        const inputVal = document.getElementById('AdminKeyInput').value.trim();
+
+        if (!inputVal) {
+            document.getElementById("errorMsg").innerText = 'Введите ключ доступа';
+            return;
+        }
+        adminKey = inputVal;
+
+        const response = await fetch("/api/admin/users", {
+            method: "GET",
+            headers: {
+                "X-Admin-Key": adminKey
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("admin_key", adminKey);
+
+            document.getElementById("LoginPanel").classList.add('hidden');
+            document.getElementById("DashbordBlock").classList.remove('hidden');
+
+            renderUsersTable(data.users);
+        } else {
+            document.getElementById('errorMsg').innerText = 'Неверный ключ доступа!';
+        }
+    }
+
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+
+        users.forEach(user => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${user.tg_id}</td>
+                    <td>${user.username || '—'}</td>
+                    <td>${user.limits}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // Управление модальным окном
+    function openModal() {
+        document.getElementById('limitsModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('limitsModal').classList.add('hidden');
+        document.getElementById('modalTgId').value = '';
+        document.getElementById('modalLimits').value = '';
+        document.getElementById('modalError').innerText = '';
+    }
+
+    async function submitAddLimits() {
+        const tgId = parseInt(document.getElementById('modalTgId').value);
+        const limits = parseInt(document.getElementById('modalLimits').value);
+
+        if (!tgId || !limits) {
+            document.getElementById('modalError').innerText = 'Заполните все поля!';
+            return;
+        }
+
+        const response = await fetch("/api/admin/add-limits", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Admin-Key": adminKey
+            },
+            body: JSON.stringify({
+                tg_id: tgId,
+                limits: limits
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            closeModal();
+            renderUsersTable(data.users);
+        } else {
+            document.getElementById('modalError').innerText = 'Ошибка при добавлении лимитов!';
+        }
+    }
+</script>
+</body>
+</html>
