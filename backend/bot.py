@@ -43,7 +43,7 @@ async def cmd_start(message: types.Message):
         await add_user(tg_id=user_id, username=username)
 
         # Ссылка-заглушка для Web App
-        web_app_url = "https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com"
+        web_app_url = "https://ai-staff-app.onrender.com/"
         welcome_text = (
             f"Здравствуйте, **{username}**! 👋\n\n"
             "Вы подключены к рабочей среде **NeuroStaff**.\n"
@@ -87,7 +87,7 @@ async def check_sub_handlers(call: types.CallbackQuery):
         await add_user(tg_id=user_id, username=user_name)
 
         kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Открыть ИИ-Штат 🚀", web_app=WebAppInfo(url='https://bcb4d87a8d4201be-194-76-217-49.serveousercontent.com'))]
+            [InlineKeyboardButton(text="Открыть ИИ-Штат 🚀", web_app=WebAppInfo(url='https://ai-staff-app.onrender.com/'))]
         ])
         await call.message.answer(
             f"Спасибо за подписку, {call.from_user.first_name}! 🎉\n Доступ открыт:",

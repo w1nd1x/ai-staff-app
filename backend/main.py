@@ -14,6 +14,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from backend.database.models import init_db, reset_all_users_limits, get_all_users, increase_limit
 
+import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from backend.bot import dp, bot  # Импортируйте вашего бота и диспетчер
+
 
 #Обновляем лимиты пользователей
 
@@ -21,6 +26,12 @@ async def schedule_limits_reset():
     while True:
         await asyncio.sleep(7200)
         await reset_all_users_limits(default_limit=5)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Запускаем polling бота в фоновой задаче при старте FastAPI
+    asyncio.create_task(dp.start_polling(bot))
+    yield
 
 # 1. Объявляем асинхронный контекстный менеджер
 @asynccontextmanager
