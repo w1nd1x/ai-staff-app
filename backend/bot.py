@@ -6,7 +6,7 @@ from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 
 # Импортируем функции нашей базы данных
-from database.models import init_db, add_user
+from backend.database.models import init_db, add_user
 
 # Загружаем переменные окружения из файла .env
 load_dotenv()
